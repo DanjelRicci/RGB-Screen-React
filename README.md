@@ -27,10 +27,10 @@ The background process has been tuned to keep performance usage to the minimum n
 The screen reading feature has been tested with different tools: direct read, ImageMagick, ffmpeg. After evaluating the performance of each method, reading the framebuffer directly turned out to be the best compromise between speed and quality.
 
 ### 🔧 Tuning
-A number variables can be found at the top of `rgb_screen_react.sh`, with explanatory comments. These variables have been already tuned to get a good compromise between speed and quality, but feel free to test with them to find the settings that work best for you.
+A number of variables can be found at the top of `rgb_screen_react.sh`, with explanatory comments. These variables have been already tuned to get a good compromise between speed and quality, but feel free to test with them to find the settings that work best for you.
 
 ## Disclaimer and credits
-RGB Screen React is feature complete and I don't plan on updating it, unless strictly necessary due to bugs or possible compatibility changes with future MuOS updates.
+RGB Screen React is feature complete and I don't plan on updating it, unless strictly necessary due to critical bugs or possible compatibility changes with future MuOS updates.
 
 This package has been built using [Claude AI](https://claude.ai/new), both because my current coding knowledge didn't cover anything yet about Linux, shell and [LÖVE](https://www.love2d.org), and because I was eager to get it done quickly. Despite using my prior coding knowledge to adjust and fine tune the app, using AI to code from scratch is not something I thought I would ever do, especially for such a small package. I cannot help but feel bad about it, so I hope this app can at least bring some joy to those who are fascinated by RGB lighting as much as I am.
 
