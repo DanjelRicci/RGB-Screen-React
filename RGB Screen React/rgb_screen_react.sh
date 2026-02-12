@@ -244,6 +244,39 @@ is_screen_on() {
     return 0
 }
 
+# Check if battery is low (returns 0 if normal, 1 if low)
+is_battery_low() {
+    # One-time cache init
+    if [ -z "$_BATT_CACHE_INIT" ]; then
+        # Load MuOS variable helpers once
+        . /opt/muos/script/var/func.sh 2>/dev/null || return 1
+
+        _BATT_CHARGER=$(GET_VAR "device" "battery/charger")
+        _BATT_CAPACITY=$(GET_VAR "device" "battery/capacity")
+        _BATT_THRESHOLD=$(GET_VAR "config" "settings/power/low_battery")
+
+        _BATT_CACHE_INIT=1
+    fi
+
+    # Validate cached paths
+    [ -r "$_BATT_CHARGER" ] || return 1
+    [ -r "$_BATT_CAPACITY" ] || return 1
+
+    # Live readings
+    read -r charging < "$_BATT_CHARGER"
+    read -r capacity < "$_BATT_CAPACITY"
+
+    # Low battery = not charging AND under threshold
+    if [ "$charging" -eq 0 ] &&
+       [ -n "$capacity" ] &&
+       [ -n "$_BATT_THRESHOLD" ] &&
+       [ "$capacity" -le "$_BATT_THRESHOLD" ]; then
+        return 0   # low battery
+    fi
+
+    return 1       # normal battery
+}
+
 smooth_value() {
     # Exponential smoothing: gradually moves current value toward target
     local curr=$1
@@ -325,6 +358,13 @@ while true; do
     [ -z "$brightness" ] && brightness=7
     
     current_time=$loop_start
+	
+    # Check if battery is low
+    if is_battery_low; then
+		# Don't need to update LEDs here because MuOS will do it when the battery is low
+        sleep 1
+        continue
+    fi
     
     # Check if screen is active (skip updates when idle/blanked to save power)
     if ! is_screen_on; then
