@@ -10,7 +10,8 @@ https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
 - **Margin exclusion**: screen margins are excluded to avoid fetching black bars
 - **Saturation-weighted average**: vivid and saturated colors have higher priority
 - **Adaptive saturation boost**: saturation is only increased for dull colors
-- **Power efficient**: low CPU usage in background, sleeps when the screen is dimmed or off
+- **Power efficient**: screen reading requires very low CPU usage
+- **Smooth integration**: perfectly integrates with existing MuOS power saving settings
 - **Fire and forget**: already tuned and ready to run, easy to customize for advanced users
 
 ### 📦 Installation
@@ -21,7 +22,7 @@ Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-S
 ### ▶️ Usage
 In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the brightness. Press L1+R1 to quit the app.
 
-The app is built on top of the existing MuOS systems that manage RGB lighting and does not interfere with the existing RGB Controller app. If you open RGB Controller after enabling Screen React, it will show `Unknown` mode: this is normal and it doesn't affact RGB Controller. You can simply change back to the other RGB modes and the existing Screen React process will be terminated.
+It's possible to use RGB Screen React and the original RGB Controller alternatively without issues since they share the same configuration file. When launching RGB Controller after Screen React is enabled, the mode will be set to `Unknown`: this is not a bug and you can just change back to any of the other modes. The Screen React background process stops automatically when any other mode is selected.
 
 ### ⚙️ Background process
 In order to work, the frontend app will automatically manage a standalone script called `rgb_screen_react.sh` placed in `mmc/MUOS/init`, which is responsible for fetching the screen colors and send them to the RGB LEDs. No user input is needed since that script will be created and deleted automatically by the frontend app, and the background process will only stay active if Screen React is enabled. The source file that handles the background process can be found in `applications/RGB Screen React/rgb_screen_react.sh`.
