@@ -1,6 +1,9 @@
 # RGB Screen React
 An app for RGB handheld devices running [MuOS](https://muos.dev), that matches the RGB colors to what's on the screen.
 
+https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
+> The tech demo above is [mer ork](https://www.lexaloffle.com/bbs/?pid=152206), running natively on MuOS with Pico-8 RasPi.
+
 ### ⭐️ Specifications
 - **Direct framebuffer reading**: colors are read directly from the system framebuffer
 - **Aspect ratio awareness**: sampling density scales correctly with the aspect ratio
@@ -18,8 +21,10 @@ Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-S
 ### ▶️ Usage
 In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the brightness. Press L1+R1 to quit the app.
 
+The app is built on top of the existing MuOS systems that manage RGB lighting and does not interfere with the existing RGB Controller app. If you open RGB Controller after enabling Screen React, it will show `Unknown` mode: this is normal and it doesn't affact RGB Controller. You can simply change back to the other RGB modes and the existing Screen React process will be terminated.
+
 ### ⚙️ Background process
-In order to work, this package will also install a script called `rgb_screen_react.sh` in `mmc/MUOS/init`, which is responsible to fetch the screen colors and send them to the RGB LEDs. The script will launch its process at system boot or when the Screen React mode is enabled from the app. The process is terminated when it detects that Screen React mode is disabled.
+In order to work, the frontend app will automatically manage a standalone script called `rgb_screen_react.sh` placed in `mmc/MUOS/init`, which is responsible for fetching the screen colors and send them to the RGB LEDs. No user input is needed since that script will be created and deleted automatically by the frontend app, and the background process will only stay active if Screen React is enabled. The source file that handles the background process can be found in `applications/RGB Screen React/rgb_screen_react.sh`.
 
 ### 📊 Performance
 The background process has been tuned to keep performance usage to the minimum necessary, keeping in mind the low power of the target devices. This is achieved by sampling a limited, staggered grid of pixels across the framebuffer rather than operating on the entire framebuffer at once. When testing on RGCubeXX (H700 quad-core ARM Cortex-A53 at 1.5GHz), `top` command shows a 2% CPU usage with the Screen React mode on, while playing other content.
@@ -27,7 +32,7 @@ The background process has been tuned to keep performance usage to the minimum n
 The screen reading feature has been tested with different tools: direct read, ImageMagick, ffmpeg. After evaluating the performance of each method, reading the framebuffer directly turned out to be the best compromise between speed and quality.
 
 ### 🔧 Tuning
-A number of variables can be found at the top of `rgb_screen_react.sh`, with explanatory comments. These variables have been already tuned to get a good compromise between speed and quality, but feel free to test with them to find the settings that work best for you.
+A number of variables can be found at the top of `applications/RGB Screen React/rgb_screen_react.sh`, with explanatory comments. These variables have been already tuned to get a good compromise between speed and quality, but feel free to test with them to find the settings that work best for you. Keep in mind that increasing the sample count or reducing the interval between samples will noticeably impact the CPU usage.
 
 ## Disclaimer and credits
 RGB Screen React is feature complete and I don't plan on updating it, unless strictly necessary due to critical bugs or possible compatibility changes with future MuOS updates.
