@@ -22,8 +22,8 @@ PIXELS_LONG_SIDE=5				# Grid size for sampling (4-6 recommended, higher=more CPU
 FINAL_SATURATION_BOOST=250		# Saturation boost (100=none, 200=2x, higher=more vibrant)
 
 # Timing intervals (in milliseconds)
-SAMPLE_INTERVAL_MS=400			# Screen read refresh rate (lower=more responsive, higher=more CPU)
-FRAME_INTERVAL_MS=50			# Main loop refresh rate (lower=smoother but more CPU)
+SAMPLE_INTERVAL_MS=400			# Screen read refresh rate (lower=more responsive but higher CPU)
+FRAME_INTERVAL_MS=50			# Main loop refresh rate (lower=smoother but higher CPU)
 LED_INTERVAL_MS=50				# LED update rate (should match or be higher than FRAME_INTERVAL_MS)
 
 # Power saving

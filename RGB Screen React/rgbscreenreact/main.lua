@@ -165,6 +165,10 @@ function parseSettings(contents)
             settings[key] = tonumber(value)
         end
     end
+    -- Normalize mode: anything other than 9 is treated as off
+    if settings.mode ~= 9 then
+        settings.mode = 0
+    end
 end
 
 -- Convert brightness from 1-10 to 0-255 scale

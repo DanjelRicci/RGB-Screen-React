@@ -7,7 +7,31 @@ local function convertBrightness(brightness)
     return math.floor((brightness) * 25.5)
 end
 
-local screenReactScript = "/run/muos/storage/init/rgb_screen_react.sh"
+local initDir = "/run/muos/storage/init"
+local initScript = initDir .. "/rgb_screen_react.sh"
+
+-- Get the path to the bundled rgb_screen_react.sh in the app root
+local function getSourceScript()
+    local sourceDir = love.filesystem.getSource()
+    -- sourceDir points to rgbscreenreact/, go up one level to app root
+    local appRoot = sourceDir:match("(.+)/[^/]+$")
+    return appRoot .. "/rgb_screen_react.sh"
+end
+
+-- Install the init script from the app bundle
+local function installInitScript()
+    local source = getSourceScript()
+    os.execute("mkdir -p " .. initDir)
+    os.execute("cp " .. string.format("%q", source) .. " " .. string.format("%q", initScript))
+    os.execute("chmod +x " .. string.format("%q", initScript))
+    print("Installed init script: " .. initScript)
+end
+
+-- Remove the init script
+local function removeInitScript()
+    os.execute("rm -f " .. string.format("%q", initScript))
+    print("Removed init script: " .. initScript)
+end
 
 -- Ensure the screen react process is running (launch only if not already active)
 local function ensureScreenReactRunning()
@@ -15,8 +39,8 @@ local function ensureScreenReactRunning()
     local result = handle:read("*a")
     handle:close()
     if result == "" then
-        os.execute(screenReactScript .. " &")
-        print("Launched screen react process: " .. screenReactScript)
+        os.execute(initScript .. " &")
+        print("Launched screen react process: " .. initScript)
     else
         print("Screen react process already running.")
     end
@@ -28,14 +52,15 @@ function command.run(settings)
     local brightness = convertBrightness(settings.brightness)
     local commandArgs = ""
 
-    if mode == 0 then
-        -- Off: turn LEDs off
-        commandArgs = string.format("1 0 0 0 0 0 0 0")
-    elseif mode == 9 then
-        -- Screen React: the screen reading script handles LED colors,
-        -- but we still need to write brightness to the config
+    if mode == 9 then
+        -- Screen React: install init script, ensure process is running
         commandArgs = string.format("9 %d", brightness)
+        installInitScript()
         ensureScreenReactRunning()
+    else
+        -- Any other mode: turn LEDs off and remove init script
+        commandArgs = string.format("1 0 0 0 0 0 0 0")
+        removeInitScript()
     end
 
     -- Define the path to the folder and the command file

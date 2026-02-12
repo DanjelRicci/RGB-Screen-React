@@ -3,8 +3,6 @@
 # ICON: rgbcontroller
 # GRID: RGB
 
-. /opt/muos/script/var/func.sh
-
 STAGE_OVERLAY=0 . /opt/muos/script/var/func.sh
 
 echo app >/tmp/act_go
