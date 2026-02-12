@@ -13,7 +13,7 @@ An app for RGB handheld devices running [MuOS](https://muos.dev), that matches t
 ### 📦 Installation
 This app is built around MuOS Jacaranda release and might not work with previous versions of MuOS.
 
-Download the latest package from Releases and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish.
+Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-Screen-React/releases) and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish.
 
 ### ▶️ Usage
 In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the brightness. Press L1+R1 to quit the app.
