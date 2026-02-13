@@ -294,6 +294,14 @@ smooth_value() {
 # INITIALIZATION
 #==============================================================================
 
+# Detect stick count (0=none, 1=single, 2=dual)
+STICK_COUNT=$(cat /opt/muos/device/config/board/stick 2>/dev/null || echo 2)
+
+# Exit if no sticks (no LEDs under sticks to control)
+if [ "$STICK_COUNT" -eq 0 ]; then
+    exit 0
+fi
+
 # Get screen resolution
 read FB_WIDTH FB_HEIGHT <<EOF
 $(get_fb_resolution)
@@ -380,10 +388,17 @@ while true; do
     if [ "$current_time" -ge "$next_sample_time" ]; then
         sample_start=$current_time
         
-        # Accumulate weighted color sums (left and right sides)
-        weighted_r_l=0 weighted_g_l=0 weighted_b_l=0
-        weighted_r_r=0 weighted_g_r=0 weighted_b_r=0
-        weight_l=0 weight_r=0
+        # Initialize accumulators based on stick count
+        if [ "$STICK_COUNT" -eq 1 ]; then
+            # Single stick: accumulate whole screen into one color
+            weighted_r=0 weighted_g=0 weighted_b=0
+            total_weight=0
+        else
+            # Dual sticks: accumulate left and right sides separately
+            weighted_r_l=0 weighted_g_l=0 weighted_b_l=0
+            weighted_r_r=0 weighted_g_r=0 weighted_b_r=0
+            weight_l=0 weight_r=0
+        fi
         
         # Read pixels in staggered brick pattern for better coverage
         row=0
@@ -429,17 +444,26 @@ while true; do
                     weight_int=1
                 fi
                 
-                # Accumulate to left or right side based on pixel position
-                if [ "$px" -lt $(( FB_WIDTH / 2 )) ]; then
-                    weighted_r_l=$(( weighted_r_l + r * weight_int ))
-                    weighted_g_l=$(( weighted_g_l + g * weight_int ))
-                    weighted_b_l=$(( weighted_b_l + b * weight_int ))
-                    weight_l=$(( weight_l + weight_int ))
+                # Accumulate pixels based on stick count
+                if [ "$STICK_COUNT" -eq 1 ]; then
+                    # Single stick: accumulate all pixels into one weighted sum
+                    weighted_r=$(( weighted_r + r * weight_int ))
+                    weighted_g=$(( weighted_g + g * weight_int ))
+                    weighted_b=$(( weighted_b + b * weight_int ))
+                    total_weight=$(( total_weight + weight_int ))
                 else
-                    weighted_r_r=$(( weighted_r_r + r * weight_int ))
-                    weighted_g_r=$(( weighted_g_r + g * weight_int ))
-                    weighted_b_r=$(( weighted_b_r + b * weight_int ))
-                    weight_r=$(( weight_r + weight_int ))
+                    # Dual sticks: accumulate to left or right side based on pixel position
+                    if [ "$px" -lt $(( FB_WIDTH / 2 )) ]; then
+                        weighted_r_l=$(( weighted_r_l + r * weight_int ))
+                        weighted_g_l=$(( weighted_g_l + g * weight_int ))
+                        weighted_b_l=$(( weighted_b_l + b * weight_int ))
+                        weight_l=$(( weight_l + weight_int ))
+                    else
+                        weighted_r_r=$(( weighted_r_r + r * weight_int ))
+                        weighted_g_r=$(( weighted_g_r + g * weight_int ))
+                        weighted_b_r=$(( weighted_b_r + b * weight_int ))
+                        weight_r=$(( weight_r + weight_int ))
+                    fi
                 fi
                 
                 col=$(( col + 1 ))
@@ -448,77 +472,126 @@ while true; do
         done
         
         # Calculate weighted averages and apply adaptive saturation boost
-        # Left side
-        if [ "$weight_l" -gt 0 ]; then
-            avg_r_l=$(( weighted_r_l / weight_l ))
-            avg_g_l=$(( weighted_g_l / weight_l ))
-            avg_b_l=$(( weighted_b_l / weight_l ))
-            
-            # Calculate current saturation
-            max_c=$avg_r_l
-            [ "$avg_g_l" -gt "$max_c" ] && max_c=$avg_g_l
-            [ "$avg_b_l" -gt "$max_c" ] && max_c=$avg_b_l
-            
-            min_c=$avg_r_l
-            [ "$avg_g_l" -lt "$min_c" ] && min_c=$avg_g_l
-            [ "$avg_b_l" -lt "$min_c" ] && min_c=$avg_b_l
-            
-            if [ "$max_c" -gt 0 ]; then
-                current_sat=$(( (max_c - min_c) * 100 / max_c ))
-            else
-                current_sat=0
+        if [ "$STICK_COUNT" -eq 1 ]; then
+            # Single stick: calculate one color from whole screen
+            if [ "$total_weight" -gt 0 ]; then
+                avg_r=$(( weighted_r / total_weight ))
+                avg_g=$(( weighted_g / total_weight ))
+                avg_b=$(( weighted_b / total_weight ))
+                
+                # Calculate current saturation
+                max_c=$avg_r
+                [ "$avg_g" -gt "$max_c" ] && max_c=$avg_g
+                [ "$avg_b" -gt "$max_c" ] && max_c=$avg_b
+                
+                min_c=$avg_r
+                [ "$avg_g" -lt "$min_c" ] && min_c=$avg_g
+                [ "$avg_b" -lt "$min_c" ] && min_c=$avg_b
+                
+                if [ "$max_c" -gt 0 ]; then
+                    current_sat=$(( (max_c - min_c) * 100 / max_c ))
+                else
+                    current_sat=0
+                fi
+                
+                # Adaptive boost: only boosts desaturated colors
+                boost_int=$(( 100 + (100 - current_sat) * (FINAL_SATURATION_BOOST - 100) / 100 ))
+                
+                gray=$(( (avg_r + avg_g + avg_b) / 3 ))
+                final_r=$(( gray + (avg_r - gray) * boost_int / 100 ))
+                final_g=$(( gray + (avg_g - gray) * boost_int / 100 ))
+                final_b=$(( gray + (avg_b - gray) * boost_int / 100 ))
+                
+                # Clamp to valid RGB range
+                [ "$final_r" -lt 0 ] && final_r=0
+                [ "$final_r" -gt 255 ] && final_r=255
+                [ "$final_g" -lt 0 ] && final_g=0
+                [ "$final_g" -gt 255 ] && final_g=255
+                [ "$final_b" -lt 0 ] && final_b=0
+                [ "$final_b" -gt 255 ] && final_b=255
+                
+                # Use same color for both left and right
+                target_r_l=$final_r
+                target_g_l=$final_g
+                target_b_l=$final_b
+                target_r_r=$final_r
+                target_g_r=$final_g
+                target_b_r=$final_b
+            fi
+        else
+            # Dual sticks: calculate separate colors for left and right
+            # Left side
+            if [ "$weight_l" -gt 0 ]; then
+                avg_r_l=$(( weighted_r_l / weight_l ))
+                avg_g_l=$(( weighted_g_l / weight_l ))
+                avg_b_l=$(( weighted_b_l / weight_l ))
+                
+                # Calculate current saturation
+                max_c=$avg_r_l
+                [ "$avg_g_l" -gt "$max_c" ] && max_c=$avg_g_l
+                [ "$avg_b_l" -gt "$max_c" ] && max_c=$avg_b_l
+                
+                min_c=$avg_r_l
+                [ "$avg_g_l" -lt "$min_c" ] && min_c=$avg_g_l
+                [ "$avg_b_l" -lt "$min_c" ] && min_c=$avg_b_l
+                
+                if [ "$max_c" -gt 0 ]; then
+                    current_sat=$(( (max_c - min_c) * 100 / max_c ))
+                else
+                    current_sat=0
+                fi
+                
+                # Adaptive boost: only boosts desaturated colors
+                boost_int=$(( 100 + (100 - current_sat) * (FINAL_SATURATION_BOOST - 100) / 100 ))
+                
+                gray=$(( (avg_r_l + avg_g_l + avg_b_l) / 3 ))
+                target_r_l=$(( gray + (avg_r_l - gray) * boost_int / 100 ))
+                target_g_l=$(( gray + (avg_g_l - gray) * boost_int / 100 ))
+                target_b_l=$(( gray + (avg_b_l - gray) * boost_int / 100 ))
+                
+                # Clamp to valid RGB range
+                [ "$target_r_l" -lt 0 ] && target_r_l=0
+                [ "$target_r_l" -gt 255 ] && target_r_l=255
+                [ "$target_g_l" -lt 0 ] && target_g_l=0
+                [ "$target_g_l" -gt 255 ] && target_g_l=255
+                [ "$target_b_l" -lt 0 ] && target_b_l=0
+                [ "$target_b_l" -gt 255 ] && target_b_l=255
             fi
             
-            # Adaptive boost: only boosts desaturated colors
-            boost_int=$(( 100 + (100 - current_sat) * (FINAL_SATURATION_BOOST - 100) / 100 ))
-            
-            gray=$(( (avg_r_l + avg_g_l + avg_b_l) / 3 ))
-            target_r_l=$(( gray + (avg_r_l - gray) * boost_int / 100 ))
-            target_g_l=$(( gray + (avg_g_l - gray) * boost_int / 100 ))
-            target_b_l=$(( gray + (avg_b_l - gray) * boost_int / 100 ))
-            
-            # Clamp to valid RGB range
-            [ "$target_r_l" -lt 0 ] && target_r_l=0
-            [ "$target_r_l" -gt 255 ] && target_r_l=255
-            [ "$target_g_l" -lt 0 ] && target_g_l=0
-            [ "$target_g_l" -gt 255 ] && target_g_l=255
-            [ "$target_b_l" -lt 0 ] && target_b_l=0
-            [ "$target_b_l" -gt 255 ] && target_b_l=255
-        fi
-        
-        # Right side
-        if [ "$weight_r" -gt 0 ]; then
-            avg_r_r=$(( weighted_r_r / weight_r ))
-            avg_g_r=$(( weighted_g_r / weight_r ))
-            avg_b_r=$(( weighted_b_r / weight_r ))
-            
-            max_c=$avg_r_r
-            [ "$avg_g_r" -gt "$max_c" ] && max_c=$avg_g_r
-            [ "$avg_b_r" -gt "$max_c" ] && max_c=$avg_b_r
-            
-            min_c=$avg_r_r
-            [ "$avg_g_r" -lt "$min_c" ] && min_c=$avg_g_r
-            [ "$avg_b_r" -lt "$min_c" ] && min_c=$avg_b_r
-            
-            if [ "$max_c" -gt 0 ]; then
-                current_sat=$(( (max_c - min_c) * 100 / max_c ))
-            else
-                current_sat=0
+            # Right side
+            if [ "$weight_r" -gt 0 ]; then
+                avg_r_r=$(( weighted_r_r / weight_r ))
+                avg_g_r=$(( weighted_g_r / weight_r ))
+                avg_b_r=$(( weighted_b_r / weight_r ))
+                
+                max_c=$avg_r_r
+                [ "$avg_g_r" -gt "$max_c" ] && max_c=$avg_g_r
+                [ "$avg_b_r" -gt "$max_c" ] && max_c=$avg_b_r
+                
+                min_c=$avg_r_r
+                [ "$avg_g_r" -lt "$min_c" ] && min_c=$avg_g_r
+                [ "$avg_b_r" -lt "$min_c" ] && min_c=$avg_b_r
+                
+                if [ "$max_c" -gt 0 ]; then
+                    current_sat=$(( (max_c - min_c) * 100 / max_c ))
+                else
+                    current_sat=0
+                fi
+                
+                boost_int=$(( 100 + (100 - current_sat) * (FINAL_SATURATION_BOOST - 100) / 100 ))
+                
+                gray=$(( (avg_r_r + avg_g_r + avg_b_r) / 3 ))
+                target_r_r=$(( gray + (avg_r_r - gray) * boost_int / 100 ))
+                target_g_r=$(( gray + (avg_g_r - gray) * boost_int / 100 ))
+                target_b_r=$(( gray + (avg_b_r - gray) * boost_int / 100 ))
+                
+                [ "$target_r_r" -lt 0 ] && target_r_r=0
+                [ "$target_r_r" -gt 255 ] && target_r_r=255
+                [ "$target_g_r" -lt 0 ] && target_g_r=0
+                [ "$target_g_r" -gt 255 ] && target_g_r=255
+                [ "$target_b_r" -lt 0 ] && target_b_r=0
+                [ "$target_b_r" -gt 255 ] && target_b_r=255
             fi
-            
-            boost_int=$(( 100 + (100 - current_sat) * (FINAL_SATURATION_BOOST - 100) / 100 ))
-            
-            gray=$(( (avg_r_r + avg_g_r + avg_b_r) / 3 ))
-            target_r_r=$(( gray + (avg_r_r - gray) * boost_int / 100 ))
-            target_g_r=$(( gray + (avg_g_r - gray) * boost_int / 100 ))
-            target_b_r=$(( gray + (avg_b_r - gray) * boost_int / 100 ))
-            
-            [ "$target_r_r" -lt 0 ] && target_r_r=0
-            [ "$target_r_r" -gt 255 ] && target_r_r=255
-            [ "$target_g_r" -lt 0 ] && target_g_r=0
-            [ "$target_g_r" -gt 255 ] && target_g_r=255
-            [ "$target_b_r" -lt 0 ] && target_b_r=0
-            [ "$target_b_r" -gt 255 ] && target_b_r=255
         fi
         
         sample_end=$(awk '{print int($1 * 1000)}' /proc/uptime)
