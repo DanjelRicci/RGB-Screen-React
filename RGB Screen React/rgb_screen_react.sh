@@ -22,9 +22,9 @@ PIXELS_LONG_SIDE=5				# Grid size for sampling (4-6 recommended, higher=more CPU
 FINAL_SATURATION_BOOST=250		# Saturation boost (100=none, 200=2x, higher=more vibrant)
 
 # Timing intervals (in milliseconds)
-SAMPLE_INTERVAL_MS=400			# Screen read refresh rate (lower=more responsive but higher CPU)
-FRAME_INTERVAL_MS=50			# Main loop refresh rate (lower=smoother but higher CPU)
-LED_INTERVAL_MS=50				# LED update rate (should match or be higher than FRAME_INTERVAL_MS)
+SAMPLE_INTERVAL_MS=333			# Screen read refresh rate (lower=more responsive but higher CPU)
+FRAME_INTERVAL_MS=33			# Main loop refresh rate (lower=smoother but higher CPU)
+LED_INTERVAL_MS=33				# LED update rate (should match or be higher than FRAME_INTERVAL_MS)
 
 # Power saving
 ENABLE_SCREEN_DETECTION=1		# Pauses all loops when screen is dimmed or off (1=on, 0=off)
@@ -393,6 +393,14 @@ while true; do
     if [ "$current_time" -ge "$next_sample_time" ]; then
         sample_start=$current_time
         
+        # Pre-calculate constants to avoid redundant calculations in loops
+        # (Optimization: saves ~75 arithmetic operations per sample cycle)
+        col_spacing=$(( sample_w / GRID_W ))
+        half_spacing=$(( col_spacing / 2 ))
+        quarter_spacing=$(( half_spacing / 2 ))
+        double_grid_h=$(( GRID_H * 2 ))
+        half_width=$(( FB_WIDTH / 2 ))
+        
         # Initialize accumulators based on stick count
         if [ "$STICK_COUNT" -eq 1 ]; then
             # Single stick: accumulate whole screen into one color
@@ -408,23 +416,23 @@ while true; do
         # Read pixels in staggered brick pattern for better coverage
         row=0
         while [ $row -lt $GRID_H ]; do
+            # Optimization #3: Calculate row parity once per row (saves 5 calculations per row)
+            row_is_odd=$(( row % 2 ))
+            
             col=0
             while [ $col -lt $GRID_W ]; do
-                # Calculate pixel position in sampling area
-                col_spacing=$(( sample_w / GRID_W ))
-                half_spacing=$(( col_spacing / 2 ))
-                quarter_spacing=$(( half_spacing / 2 ))
-                
+                # Calculate pixel position using pre-calculated spacing values
                 base_px=$(( margin_w + col * col_spacing + half_spacing ))
                 
-                # Stagger rows for better spatial coverage
-                if [ $(( row % 2 )) -eq 1 ]; then
+                # Stagger rows for better spatial coverage using cached parity
+                if [ $row_is_odd -eq 1 ]; then
                     px=$(( base_px - quarter_spacing ))
                 else
                     px=$(( base_px + quarter_spacing ))
                 fi
                 
-                py=$(( margin_h + row * sample_h / GRID_H + sample_h / (GRID_H * 2) ))
+                # Optimization #4: Use pre-calculated double_grid_h
+                py=$(( margin_h + row * sample_h / GRID_H + sample_h / double_grid_h ))
                 
                 # Read pixel from framebuffer (BGRA format)
                 offset=$(( (py * FB_WIDTH + px) * 4 ))
@@ -457,8 +465,8 @@ while true; do
                     weighted_b=$(( weighted_b + b * weight_int ))
                     total_weight=$(( total_weight + weight_int ))
                 else
-                    # Dual sticks: accumulate to left or right side based on pixel position
-                    if [ "$px" -lt $(( FB_WIDTH / 2 )) ]; then
+                    # Dual sticks: accumulate to left or right using pre-calculated half_width
+                    if [ "$px" -lt "$half_width" ]; then
                         weighted_r_l=$(( weighted_r_l + r * weight_int ))
                         weighted_g_l=$(( weighted_g_l + g * weight_int ))
                         weighted_b_l=$(( weighted_b_l + b * weight_int ))
@@ -606,7 +614,7 @@ while true; do
         if [ "$sample_duration" -gt "$SAMPLE_INTERVAL_MS" ]; then
             next_sample_time=$sample_end
         else
-            next_sample_time=$((sample_end + SAMPLE_INTERVAL_MS))
+            next_sample_time=$((sample_start + SAMPLE_INTERVAL_MS))
         fi
     fi
     
@@ -640,7 +648,7 @@ while true; do
         if [ "$led_duration" -gt "$LED_INTERVAL_MS" ]; then
             next_led_time=$led_end
         else
-            next_led_time=$((led_end + LED_INTERVAL_MS))
+            next_led_time=$((led_start + LED_INTERVAL_MS))
         fi
     fi
     
