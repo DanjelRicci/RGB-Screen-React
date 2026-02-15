@@ -344,6 +344,7 @@ target_r_r=0 target_g_r=0 target_b_r=0
 # Timing state
 next_sample_time=0
 next_led_time=0
+next_brightness_check=0  # For brightness caching only
 
 #==============================================================================
 # MAIN LOOP
@@ -352,6 +353,7 @@ next_led_time=0
 while true; do
     loop_start=$(awk '{print int($1 * 1000)}' /proc/uptime)
     
+    # Always check mode every loop (critical for immediate exit)
     mode=$(get_setting "mode")
     
     # Exit if Screen React mode (9) is not active
@@ -362,10 +364,13 @@ while true; do
     
     [ ! -r "$FB_DEVICE" ] && sleep 1 && continue
     
-    brightness=$(get_setting "brightness")
-    [ -z "$brightness" ] && brightness=7
-    
+    # Cache brightness - only re-read every 1000ms (not critical, saves grep calls)
     current_time=$loop_start
+    if [ "$current_time" -ge "$next_brightness_check" ]; then
+        brightness=$(get_setting "brightness")
+        [ -z "$brightness" ] && brightness=7
+        next_brightness_check=$((current_time + 1000))
+    fi
 	
     # Check if battery is low
     if is_battery_low; then
