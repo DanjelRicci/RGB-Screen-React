@@ -4,44 +4,43 @@ An app for RGB handheld devices running [MuOS](https://muos.dev), that matches t
 https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
 > The tech demo above is [mer ork](https://www.lexaloffle.com/bbs/?pid=152206), running natively on MuOS with Pico-8 RasPi.
 
-### ⭐️ Specifications
+### ⭐️ Features
 - **Direct framebuffer reading**: colors are read directly from the system framebuffer
-- **Aspect ratio awareness**: sampling density scales correctly with the aspect ratio
+- **Aspect ratio awareness**: sampling density scales with aspect ratio
 - **Margin exclusion**: screen margins are excluded to avoid fetching black bars
 - **Saturation-weighted average**: vivid and saturated colors have higher priority
 - **Adaptive saturation boost**: saturation is only increased for dull colors
-- **Power efficient**: screen reading requires very low CPU usage
+- **Power efficient**: framebuffer reading requires very low CPU usage
+- **Stick detection**: color output adapts to devices with one or two RGB sticks
 - **Smooth integration**: perfectly integrates with existing MuOS power saving settings
 - **Fire and forget**: already tuned and ready to run, easy to customize for advanced users
 
 ### 📦 Installation
-This app is built around MuOS Jacaranda release and might not work with previous versions of MuOS.
+**This app is built around MuOS Jacaranda release and might not work with previous versions of MuOS.**
 
 Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-Screen-React/releases) and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish.
 
 ### ▶️ Usage
-In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the LED brightness. Press L1+R1 to quit the app.
-
-It's possible to use RGB Screen React and the original RGB Controller alternatively without issues since they share the same configuration file. When launching RGB Controller after Screen React is enabled, the mode will be set to `Unknown`: this is not a bug and you can just change back to any of the other modes. The Screen React background process stops automatically when any other mode is selected.
+In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the LED brightness. Press L1+R1 to quit the app. The original RGB Controller app will show `Unknown` mode after Screen React is enabled: this is not a bug and you can just change back to any of the other modes.
 
 ### ⚙️ Background process
-In order to work, the frontend app will automatically manage a standalone script called `rgb_screen_react.sh` placed in `mmc/MUOS/init`, which is responsible for fetching the screen colors and sending them to the RGB LEDs. No user input is required: the script will be created and deleted automatically by the frontend app, and the background process will remain active only if Screen React is enabled. The source file that handles the background process can be found in `applications/RGB Screen React/rgb_screen_react.sh`.
+The app uses a background process included in `rgb_screen_react.sh`, responsible for fetching the screen colors and sending them to the RGB LEDs. That script is automatically added and removed from `mmc/MUOS/init`, and the background process is automatically launched and terminated when necessary.
 
 ### 📊 Performance
-The background process has been tuned to keep performance usage to the necessary minimum, keeping in mind the low power of the target devices. This is achieved by sampling a sparse and staggered grid of pixels across the framebuffer, rather than operating on the entire framebuffer at once. The color sampling happens at lower frequency than color smoothing and setting.
+Due to the low power of the target devices, the background process has been tuned to keep performance usage to the minimum. This is achieved by sampling a sparse and staggered grid of pixels across the framebuffer, rather than operating on the entire framebuffer at once, and by running the sampling at a low refresh rate. The background process stops early when it detects a device with no RGB sticks, or when the Screen React mode is disabled.
 
-When testing on RGCubeXX (H700 quad-core ARM Cortex-A53 at 1.5GHz), `top` command shows a 2% CPU usage with the Screen React mode on, while playing other content. The screen reading feature has been tested with different tools: direct read, ImageMagick, ffmpeg. After evaluating the performance of each method, reading the framebuffer directly turned out to be the best compromise between speed and quality.
+Running the shell `top` command shows a very consistent 2% CPU usage from `rgb_screen_react.sh` with default settings and while playing other content, on a RG CubeXX *(H700 quad-core ARM Cortex-A53 at 1.5GHz)*. Reading the framebuffer has been tested with different solutions: per-pixel, ImageMagick, ffmpeg. After evaluating the performance of each solution, per-pixel turned out to be the fastest if used with moderation.
 
 ### 🔧 Tuning
-A number of variables can be found at the top of `applications/RGB Screen React/rgb_screen_react.sh`, with explanatory comments. These variables have been already tuned to get a good compromise between speed and quality, but feel free to adjust the settings to your preference. Keep in mind that increasing the sample count or reducing the interval between samples will noticeably impact the CPU usage.
+A number of variables can be found at the top of `applications/RGB Screen React/rgb_screen_react.sh`, with explanatory comments. These variables have been already tuned to get a good compromise between speed and quality, but feel free to adjust the settings to your preference. Keep in mind that increasing the sample count or reducing the time interval between samples will noticeably increase the CPU usage.
 
 ## Disclaimer and credits
 RGB Screen React is feature complete and I don't plan on updating it, unless strictly necessary due to critical bugs or possible compatibility changes with future MuOS updates.
 
-This package has been built using [Claude AI](https://claude.ai/new), both because my current coding knowledge didn't cover anything yet about Linux, shell and [LÖVE](https://www.love2d.org), and because I was eager to get it done quickly. Despite using my prior coding knowledge to adjust and fine tune the app, using AI to code from scratch is not something I thought I would ever do, especially for such a small package. I cannot help but feel bad about it, so I hope this app can at least bring some joy to those who are fascinated by RGB lighting as much as I am.
+This package has been built using [Claude AI](https://claude.ai/new) under my complete supervision. I used AI both because my knowledge didn't cover anything yet about Linux, shell and [LÖVE](https://www.love2d.org), and because I was eager to get it done quickly. Despite using my current coding knowledge to adjust and fine tune the code, using AI to create anything from scratch is not something I thought I would ever do, especially for such a small project. I cannot help but feel bad about it, so I hope this app can at least bring some joy to those who are fascinated by RGB lighting as much as I am.
 
-Inspired from [Bifrost by Pollux-MoonBench](https://github.com/Pollux-MoonBench/Bifrost). I had that on my AYN Thor and wanted to fill the gap for Anbernic devices as best as I could.
+Inspired by [bias lighting](https://en.wikipedia.org/wiki/Bias_lighting) and from the [Bifrost app](https://github.com/Pollux-MoonBench/Bifrost) by @Pollux-MoonBench: I had it on my AYN Thor and wanted to fill the gap for Anbernic devices my own way.
 
-The LÖVE frontend app is a modified and simplified version of the *RGB Controller* app made by *JanTrueno*, bundled with MuOS. Both the app and the `rgb_screen_reach.sh` script are made with Claude AI under my full supervision.
+The LÖVE frontend app is a modified and simplified version of the *RGB Controller* app made by *JanTrueno*, bundled with MuOS.
 
 Special thanks to XongleBongle, AntiKk, corey, Bitter Bizarro and the [rest of the crew](https://muos.dev/crew) for that beast that is MuOS.
