@@ -646,8 +646,12 @@ while true; do
     loop_duration=$((loop_end - loop_start))
     sleep_time=$((FRAME_INTERVAL_MS - loop_duration))
     
-    if [ "$sleep_time" -gt 0 ]; then
-        sleep_sec=$(awk "BEGIN {print $sleep_time / 1000}")
-        sleep "$sleep_sec"
+    # Guarantee minimum sleep to prevent hot loops and scheduler deprioritization
+    # Even if we're behind schedule, always yield to other processes
+    if [ "$sleep_time" -lt 10 ]; then
+        sleep_time=10
     fi
+    
+    sleep_sec=$(awk "BEGIN {print $sleep_time / 1000}")
+    sleep "$sleep_sec"
 done
