@@ -1,5 +1,8 @@
 # RGB Screen React
-An app for RGB handheld devices running [MuOS](https://muos.dev), that matches the RGB colors to what's on the screen.
+An app for RGB handheld devices running [MuOS](https://muos.dev), that matches the RGB colors to what's on the screen in realtime.
+
+![preview](https://github.com/user-attachments/assets/446e0747-2492-4a80-8cec-c3b29ec7928e)
+> The preview above is [Cab Ride](https://www.lexaloffle.com/bbs/?pid=86966#p).
 
 https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
 > The tech demo above is [mer ork](https://www.lexaloffle.com/bbs/?pid=152206), running natively on MuOS with Pico-8 RasPi. Volume up!
