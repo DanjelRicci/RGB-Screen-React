@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
 **This app is built for MuOS Jacaranda and might not work with previous versions of MuOS.** The code is based on the original *RGB Controller* app bundled with MuOS, so it's expected to work on all Linux devices that can run MuOS and have RGB sticks (Anbernic devices, TrimUI devices).
 
 ### 📦 Installation
-Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-Screen-React/releases) and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish.
+Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-Screen-React/releases) and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish. To make sure the background process works correctly, go to Configuration > General Settings > Advanced Settings and enable *User init scripts*.
 
 ### ▶️ Usage
 In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the LED brightness. Press L1+R1 to quit the app. The original RGB Controller app will show `Unknown` mode after Screen React is enabled: this is not a bug and you can just change back to any of the other modes.
