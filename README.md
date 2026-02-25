@@ -44,3 +44,7 @@ Inspired by [bias lighting](https://en.wikipedia.org/wiki/Bias_lighting) and fro
 The LÖVE frontend app is a modified and simplified version of the *RGB Controller* app made by *JanTrueno*, bundled with MuOS.
 
 Special thanks to XongleBongle, AntiKk, corey, Bitter Bizarro and the [rest of the crew](https://muos.dev/crew) for that beast that is MuOS.
+
+## License
+
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — free to use, modify, and distribute for noncommercial purposes. See [LICENSE](LICENSE) for details.
