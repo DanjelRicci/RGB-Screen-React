@@ -1,8 +1,11 @@
 # RGB Screen React
-An app for RGB handheld devices running [MuOS](https://muos.dev), that matches the RGB colors to what's on the screen.
+An app for RGB handheld devices running [MuOS](https://muos.dev), that matches the RGB colors to what's on the screen in realtime.
+
+![preview](https://github.com/user-attachments/assets/446e0747-2492-4a80-8cec-c3b29ec7928e)
+> The preview above is [Cab Ride](https://www.lexaloffle.com/bbs/?pid=86966#p).
 
 https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
-> The tech demo above is [mer ork](https://www.lexaloffle.com/bbs/?pid=152206), running natively on MuOS with Pico-8 RasPi.
+> The tech demo above is [mer ork](https://www.lexaloffle.com/bbs/?pid=152206), running natively on MuOS with Pico-8 RasPi. Volume up!
 
 ### ⭐️ Features
 - **Direct framebuffer reading**: colors are read directly from the system framebuffer
@@ -15,10 +18,11 @@ https://github.com/user-attachments/assets/ef946204-35de-4c2c-955d-9ccb7d998325
 - **Smooth integration**: perfectly integrates with existing MuOS power saving settings
 - **Fire and forget**: already tuned and ready to run, easy to customize for advanced users
 
-### 📦 Installation
-**This app is built around MuOS Jacaranda release and might not work with previous versions of MuOS.**
+### 📐 Compatibility
+**This app is built for MuOS Jacaranda and might not work with previous versions of MuOS.** The code is based on the original *RGB Controller* app bundled with MuOS, so it's expected to work on all Linux devices that can run MuOS and have RGB sticks (Anbernic devices, TrimUI devices).
 
-Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-Screen-React/releases) and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish.
+### 📦 Installation
+Download the latest package from [Releases](https://github.com/DanjelRicci/RGB-Screen-React/releases) and place it into either `mmc/ARCHIVE` or `sdcard/ARCHIVE`. Boot MuOS, navigate to Applications > Archive Manager, select the package you just added, and wait for the installation to finish. To make sure the background process works correctly, go to Configuration > General Settings > Advanced Settings and enable *User init scripts*.
 
 ### ▶️ Usage
 In MuOS, navigate to Applications and launch RGB Screen React. Use the controller to enable or disable the Screen React mode and change the LED brightness. Press L1+R1 to quit the app. The original RGB Controller app will show `Unknown` mode after Screen React is enabled: this is not a bug and you can just change back to any of the other modes.
