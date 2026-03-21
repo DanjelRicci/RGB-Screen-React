@@ -89,7 +89,7 @@ function splashlib:draw()
     -- Set font for the subtitle
     love.graphics.setFont(fonts.small)
     love.graphics.setColor(1, 1, 1, self.logo.alpha)
-    love.graphics.printf("Based on JanTrueno's RGB Controller\nUpdated by SkyArcher", 0, logoBottomY + 60, width, "center")
+    love.graphics.printf("Based on JanTrueno's RGB Controller\nUpdated by SkyArcher\nv1.0.1", 0, logoBottomY + 60, width, "center")
 end
 
 function splashlib:update(dt)

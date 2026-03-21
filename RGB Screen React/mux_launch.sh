@@ -1,5 +1,5 @@
 #!/bin/bash
-# HELP: RGB Screen React
+# HELP: RGB Screen React v1.0.1
 # ICON: rgbcontroller
 # GRID: RGB
 
