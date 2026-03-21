@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+
+# PyInstaller
+build/
+dist/
+*.spec.bak
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# macOS
+.DS_Store
+*.dmg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# FBX SDK wheels (do not commit proprietary files)
+fbx_sdk/
+*.whl
+
+# Claude
+.claude

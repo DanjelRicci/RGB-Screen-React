@@ -227,11 +227,13 @@ get_fb_resolution() {
 # Check if screen is active (returns 0 if active, 1 if idle/blanked)
 is_screen_on() {
     [ "$ENABLE_SCREEN_DETECTION" -eq 0 ] && return 0
-    
-    # Check if system is idle (managed by /opt/muos/script/device/idle.sh)
+
+    # Check if system is idle (managed by DISPLAY_IDLE in /opt/muos/script/var/func.sh)
     # When idle: screen dims to 10, audio mutes, LEDs turn off
+    # Check both new (/run/muos/) and legacy (/tmp/) paths for MuOS compatibility
+    [ -f "/run/muos/is_idle" ] && return 1
     [ -f "/tmp/is_idle" ] && return 1
-    
+
     # Also check framebuffer blank state as backup
     # (0=on, 1-4=off/suspended)
     local blank_file="/sys/class/graphics/fb0/blank"
@@ -239,42 +241,18 @@ is_screen_on() {
         local blank_state=$(cat "$blank_file" 2>/dev/null)
         [ -n "$blank_state" ] && [ "$blank_state" -ne 0 ] && return 1
     fi
-    
+
     # Screen is active
     return 0
 }
 
-# Check if battery is low (returns 0 if normal, 1 if low)
+# Check if battery is low (returns 0 if low, 1 if normal)
 is_battery_low() {
-    # One-time cache init
-    if [ -z "$_BATT_CACHE_INIT" ]; then
-        # Load MuOS variable helpers once
-        . /opt/muos/script/var/func.sh 2>/dev/null || return 1
-
-        _BATT_CHARGER=$(GET_VAR "device" "battery/charger")
-        _BATT_CAPACITY=$(GET_VAR "device" "battery/capacity")
-        _BATT_THRESHOLD=$(GET_VAR "config" "settings/power/low_battery")
-
-        _BATT_CACHE_INIT=1
-    fi
-
-    # Validate cached paths
-    [ -r "$_BATT_CHARGER" ] || return 1
-    [ -r "$_BATT_CAPACITY" ] || return 1
-
-    # Live readings
-    read -r charging < "$_BATT_CHARGER"
-    read -r capacity < "$_BATT_CAPACITY"
-
-    # Low battery = not charging AND under threshold
-    if [ "$charging" -eq 0 ] &&
-       [ -n "$capacity" ] &&
-       [ -n "$_BATT_THRESHOLD" ] &&
-       [ "$capacity" -le "$_BATT_THRESHOLD" ]; then
-        return 0   # low battery
-    fi
-
-    return 1       # normal battery
+    # MuOS lowpower.sh creates this overlay file when battery is low
+    # Check both new (/run/muos/) and legacy (/tmp/) paths for MuOS compatibility
+    [ -f "/run/muos/overlay.battery" ] && return 0
+    [ -f "/tmp/overlay.battery" ] && return 0
+    return 1
 }
 
 smooth_value() {
